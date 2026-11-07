@@ -228,3 +228,13 @@ A behaviour-preserving pass over the shipped surface: no decoded output changed,
 | Fuzz attempt, zero executions | `cargo +nightly fuzz run decode_all -- -max_total_time=45` | Measured on 2026-10-16, Windows 11 x86_64, MSVC + Scoop LLVM 23, by `danalec`: it builds and links, then exits `STATUS_DLL_NOT_FOUND` (0xC0000135) on the missing `clang_rt.asan_dynamic-x86_64.dll`; `STATUS_ENTRYPOINT_NOT_FOUND` (0xC0000139) with LLVM's runtime on `PATH`; `CC=clang CXX=clang++` fails to link with LNK1120. Zero executions, so it earns no fuzz result. |
 | CLI exit codes | `decode` 0 / 1 / 2 · `lint` 0 / 1 / 2 | Asserted by the `spdr-cli` integration tests (`decode_fixture_exits_zero`, `decode_truncated_file_exits_one_with_partial_output`, `decode_nonexistent_path_exits_two_with_stderr`, and the `lint` equivalents). Unchanged by this pass. |
 | Round-to-nearest at the `u32` ceiling | `u32::MAX` ps over `2^31` ps rounds to 2 | Arithmetic in `u64`: `(4294967295 + 1073741824) / 2147483648` is 2, where the previous saturating `u32` add gave 1. Asserted by `rated_cas_latency_rounds_in_u64`. |
+
+## Documentation-accuracy correction (2026-11-06)
+
+Two claims introduced by the review-fix commit were measured again and corrected.
+
+| Claim | Value | Source |
+| --- | --- | --- |
+| Blanket `-W clippy::pedantic` on the review-fix head | 1 warning | Measured on 2026-11-06: `cargo clippy --workspace --all-targets -- -W clippy::pedantic` at `fd92f40` emits `bool_to_int_with_if` ("boolean to int conversion using if") for the restored `if results.all_decoded() { 0 } else { 1 }` exit code, on Windows (clippy 0.1.99) and Linux (clippy 0.1.98). The lint is not in the workspace deny list and the CI gate does not enable blanket `pedantic`, so the `-D warnings` gate stays clean. |
+| Blanket `-W clippy::pedantic` on the pre-review head | 0 warnings | Measured on 2026-11-06 in a worktree at `663a30f`, where the exit code was `i32::from(!results.all_decoded())` — a form the lint does not warn on (see the toolchain measurements above). This is the result the note's "zero warnings" line was carried over from; it does not describe the review-fix head. |
+| Unresolved-link warnings on the base `6b0d2d5` | 21 | Measured on 2026-11-06 on Linux: `cargo doc --workspace --no-deps --lib` at `6b0d2d5` emits 21 `unresolved link to ...` warnings, plus one public-doc-link-to-private-item warning; 22 in total, as recorded above. A `git grep -oE '\[[0-9]+:[0-9]+\]' -- '*.rs'` on that tree finds 54 such occurrences, so the warnings are not one per field — which is why the CHANGELOG now states the count instead of saying "every such field". |

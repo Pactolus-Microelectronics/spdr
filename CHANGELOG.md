@@ -39,10 +39,11 @@ removing `const` later would be breaking.
   `spdr/fuzz/Cargo.toml` and the Phase 6 report, with the attempt recorded in
   the deep-run ledger instead of left silently blank.
 - Rustdoc parsed bit-range notation in doc comments (`bits [7:5]`) as
-  intra-doc links, so `cargo doc` warned on every such field. The notation is
-  now written as a code span, which rustdoc does not link, and renders exactly
-  as written. The rendered documentation was correct before and after; the
-  defect was the warnings, which the new doc gate turns into a build failure.
+  intra-doc links, emitting 21 unresolved-link warnings on the base `6b0d2d5`.
+  The notation is now written as a code span, which rustdoc does not link, and
+  renders exactly as written. The rendered documentation was correct before and
+  after; the defect was the warnings, which the new doc gate turns into a build
+  failure.
 - The two internal CAS-latency derivations (the linter's supported-set check and
   the vendor-profile rated CL) narrowed `u32` quotients to `u16` with an
   unchecked `as`. The quotient always fit for decoded SPD bytes, but the

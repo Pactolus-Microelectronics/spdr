@@ -43,9 +43,10 @@ output-filename collision between the `spdr` library and the `spdr` binary
 
 `[workspace.lints.clippy]` denies a curated set from `clippy::pedantic`:
 `cast_possible_truncation`, `missing_errors_doc`, `doc_markdown`,
-`ref_option`, `needless_pass_by_value`, `trivially_copy_pass_by_ref` and
-`bool_to_int_with_if`. Curated rather than blanket, so that a future upstream
-pedantic lint cannot break CI on a toolchain bump.
+`ref_option`, `needless_pass_by_value` and `trivially_copy_pass_by_ref`.
+Curated rather than blanket, so that a future upstream pedantic lint cannot
+break CI on a toolchain bump. `bool_to_int_with_if` was dropped from the set
+during this pass; see below.
 
 Two facts about that set were measured rather than assumed, and both corrected
 claims made earlier in the review:
@@ -129,8 +130,12 @@ is meant to be the open reference.
 
 - `cargo fmt --check` · clean.
 - `cargo clippy --workspace --all-targets -- -D warnings` · clean.
-- `cargo clippy --workspace --all-targets -- -W clippy::pedantic` · zero
-  warnings.
+- `cargo clippy --workspace --all-targets -- -W clippy::pedantic` · one
+  warning: `bool_to_int_with_if` on the restored `if ok { 0 } else { 1 }` exit
+  code. The lint is not in the deny set and the CI gate does not enable blanket
+  `pedantic`, so the `-D warnings` gate stays clean. Measured on Windows and
+  Linux; traced in `docs/numerical-claims.md`. The zero-warning result belongs
+  to the pre-review head, where the exit code was `i32::from(!ok)`.
 - `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --lib` · clean.
 - `cargo build -p spdr` · clean, the existing `no_std` guard.
 - `cargo test --workspace` · the full suite passing.
